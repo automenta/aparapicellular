@@ -12,7 +12,6 @@ import java.awt.image.DataBufferByte;
  */
 public abstract class BitmapFloatKernel extends BitmapKernel {
 
-    public static final int GPU_PARALLELISM = 64;
 
     public final byte[] img;
     public final float[] fimg;
@@ -22,7 +21,7 @@ public abstract class BitmapFloatKernel extends BitmapKernel {
     public final Graphics gfx;
 
 
-    public BitmapFloatKernel(int w, int h) {
+    public BitmapFloatKernel(int w, int h, int blockSize) {
         super(w, h);
 
         // Buffer is twice the size as the screen.  We will alternate between mutating data from top to bottom
@@ -30,19 +29,30 @@ public abstract class BitmapFloatKernel extends BitmapKernel {
         image = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY);
         image.setAccelerationPriority(1f);
 
+
         gfx = image.getGraphics();
 
         width = w;
         height = h;
 
-        range = Range.create(width * height, GPU_PARALLELISM);
+        range = Range.create(width * height, blockSize);
         this.img = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
         fimg = new float[width*height];
     }
 
-    protected void commit() {
-        put(img); // Because we are using explicit buffer management we must put the imageData array
+    @Override
+    final public void run() {
+
+        final int at = getGlobalId();
+
+        float next = compute(at);
+
+        fimg[at] = next;
+        img[at] = (byte)(256f * next); //round float to 8bit grayscale
+
     }
+
+    abstract protected float compute(int at);
 
     @Override
     public Graphics gfx() {
@@ -51,18 +61,17 @@ public abstract class BitmapFloatKernel extends BitmapKernel {
 
     @Override
     public void draw(Graphics g) {
+
         g.drawImage(image, 0, 0, width, height, 0, 0, width, height, null);
     }
 
     @Override
-    public abstract void run();
-
     public void next() {
 
         execute(range);
-
-        for (int i = 0 ;i < fimg.length; i++)
-            img[i] = (byte)(fimg[i] * 255f);
+//
+//        for (int i = 0 ;i < fimg.length; i++)
+//            img[i] = (byte)(fimg[i] * 255f);
     }
 
 

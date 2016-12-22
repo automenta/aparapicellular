@@ -15,9 +15,9 @@ public class SmoothLifeKernel extends BitmapFloatKernel {
     final float alpha_n = 0.03f;
     final float alpha_m = 0.15f;
     final float initial_fill = 0.51f;
-    final float dt = 0.0116f;
+    final float dt = 0.0316f;
 
-    final float ra = 12f;
+    final float ra = 12;
     final float ri = ra / 3f;
     final float b = 1;
 
@@ -26,10 +26,8 @@ public class SmoothLifeKernel extends BitmapFloatKernel {
     float Minv = 1.0f / areai;
     float Ninv = 1.0f / areaa;
 
-
-
-    public SmoothLifeKernel(int width) {
-        super(width, width);
+    public SmoothLifeKernel(int width, int height, int blockSize) {
+        super(width, height, blockSize);
         reset();
     }
 
@@ -42,79 +40,69 @@ public class SmoothLifeKernel extends BitmapFloatKernel {
                 float dy = j - height * 0.5f;
                 int t = i + width * j;
                 fimg[t] =
-                        (float) (Math.exp((-dx * dx - dy * dy) / ra / ra / 2f) + Math.random() * initial_fill);
+                        (float) (exp((-dx * dx - dy * dy) / ra / ra / 2f) + Math.random() * initial_fill);
             }
         }
     }
 
 
 
-    static float func_smooth (float x, float a, float ea) {
-        return 1.0f / (1.0f + (float) Math.exp(-(x - a) * 4.0f / ea));
+    float func_smooth (float x, float a, float ea) {
+        return 1.0f / (1.0f + exp(-(x - a) * 4.0f / ea));
     }
-    static float sigmoid_ab (float sn, float x, float a, float b) {
+    float sigmoid_ab (float sn, float x, float a, float b) {
         return func_smooth(x, a, sn) * (1.0f - func_smooth(x, b, sn));
     }
-    static float sigmoid_mix (float sm, float min, float max, float m) {
+    float sigmoid_mix (float sm, float min, float max, float m) {
         return min + func_smooth(m, 0.5f, sm) * (max - min);
     }
 
 
-
-
-
-
-    @Override
-    public void run() {
-
-        final int at = getGlobalId();
-
-        int x = at % width;
+    @Override protected float compute(int at) {
         int y = at / width;
+        int x = at % width;
 
         float m = 0, n = 0;
+        for (float dy = -ra - 2; dy <= ra + 2; dy++) {
 
-        for (float dx = -ra - 2; dx <= ra + 2; dx++) {
-
-            int tx = (int)(x + dx);
-            if ((tx < 0) || (tx >= width))
+            int ty = (int)(y + dy);
+            if ((ty < 0) || (ty >= height))
                 continue;
 
-            for (float dy = -ra - 2; dy <= ra + 2; dy++) {
+            float dydy = dy * dy;
+            int yOffset = ty * width;
 
-                int ty = (int)(y + dy);
-                if ((ty < 0) || (ty >= height))
+            for (float dx = -ra - 2; dx <= ra + 2; dx++) {
+
+
+                int tx = (int)(x + dx);
+                if ((tx < 0) || (tx >= width))
                     continue;
 
-                float rr = dx * dx + dy * dy;
-                float r = (float) Math.sqrt(rr);
+                float r = (float) Math.sqrt( dx * dx + dydy );
 
-                float a_interp = (ra + b / 2 - r) / b;
-
-
+                float a_interp = (ra + b / 2f - r) / b;
 
                 float value = 0;
                 // If we get *anything* here, sample the texture:
                 if (a_interp > 0) {
-                    int t = (ty * width) + tx;
-
-                    value = (fimg[ t]);
+                    value = fimg[yOffset + tx];
                 }
 
-                float i_interp = (ri + b / 2 - r) / b;
-                if (i_interp > 1) {
+                float i_interp = (ri + b / 2f - r) / b;
+                if (i_interp > 1f) {
                     // If inside the inner circle, just add:
                     m += value;
-                } else if (i_interp > 0) {
+                } else if (i_interp > 0f) {
                     // Else if greater than zero, add antialiased:
                     m += value * i_interp;//((ri + b / 2 - r) / b);
                 }
 
-                if (i_interp < 1) {
+                if (i_interp < 1f) {
                     // If outside the inner border of the inner circle:
-                    if (1 - i_interp < 1) {
+                    if (1f - i_interp < 1f) {
                         // If inside the outer border of the inner circle, then interpolate according to inner (reversed):
-                        n += value * (1.0f - i_interp); //(ri + b / 2 - r) / b);
+                        n += value * (1f - i_interp); //(ri + b / 2 - r) / b);
                     } else if (a_interp > 1) {
                         // Else if inside the outer circle, just add:
                         n += value;
@@ -122,6 +110,8 @@ public class SmoothLifeKernel extends BitmapFloatKernel {
                         // Else, if interpolant greater than zero, add:
                         n += value * a_interp; //((ra + b / 2 - r) / b);
                     }
+
+
                 }
             }
         }
@@ -139,22 +129,19 @@ public class SmoothLifeKernel extends BitmapFloatKernel {
         // Update:
         float prev = (fimg[at]);
 
-        float next = prev + dt * (s - prev);
         //float next = prev + dt * (2.0 * s - 1.0);
 
         //clamp
 //        if (next < 0) next = 0;
 //        if (next > 1f) next = 1f;
-
-
-        fimg[at] =  (( next )); //round float to 8bit grayscale
+        return prev + dt * (s - prev);
     }
 
 
     public static void main(String[] _args) {
 
 
-        new BitmapKernelUI(new SmoothLifeKernel(128 ));
+        new BitmapKernelUI(new SmoothLifeKernel(256, 128, 128 ));
 
 
     }

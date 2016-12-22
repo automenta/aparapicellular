@@ -28,8 +28,8 @@ public class ConwayLifeKernel extends BitmapU8Kernel {
     public static final byte ALIVE = (byte) 0xff;
     public static final byte DEAD = 0;
 
-    public ConwayLifeKernel(int w, int h) {
-        super(w, h);
+    public ConwayLifeKernel(int w, int h, int blockSize) {
+        super(w, h, blockSize);
 
         //setExplicit(true); // This gives us a performance boost for GPU mode.
 
@@ -83,7 +83,7 @@ public class ConwayLifeKernel extends BitmapU8Kernel {
     public static void main(String[] _args) {
 
 
-        new BitmapKernelUI(new ConwayLifeKernel(512, 512));
+        new BitmapKernelUI(new ConwayLifeKernel(512, 512, 128));
 
 
     }

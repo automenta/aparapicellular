@@ -11,7 +11,6 @@ import java.awt.image.DataBufferByte;
  * The top half and the bottom half of the image are swapped each frame
  */
 public abstract class BitmapU8Kernel extends BitmapKernel {
-    final static int GPU_PARALLELISM = 32;
 
     public final BufferedImage image;
     public final Graphics gfx;
@@ -19,7 +18,7 @@ public abstract class BitmapU8Kernel extends BitmapKernel {
     protected int toBase;
     public final byte[] img;
 
-    public BitmapU8Kernel(int w, int h) {
+    public BitmapU8Kernel(int w, int h, int blockSize) {
         super(w, h);
 
         // Buffer is twice the size as the screen.  We will alternate between mutating data from top to bottom
@@ -32,7 +31,7 @@ public abstract class BitmapU8Kernel extends BitmapKernel {
         toBase = 0;
         fromBase = height * width;
 
-        range = Range.create(width * height, GPU_PARALLELISM);
+        range = Range.create(width * height, blockSize);
         this.img = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
     }
 

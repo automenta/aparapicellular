@@ -72,10 +72,8 @@ import java.util.concurrent.ConcurrentLinkedDeque;
  */
 public class BitmapKernelUI {
 
-    private static BitmapU8Kernel kernel;
     final int width;
     final int height;
-
 
     static long start = 0L;
 
@@ -186,7 +184,7 @@ public class BitmapKernelUI {
 
 
     static class BitmapKernelView extends JComponent implements MouseMotionListener {
-        private final Font font = new Font("Monospace", Font.BOLD, 50);
+        //private final Font font = new Font("Monospace", Font.BOLD, 50);
         private final BitmapKernel kernel;
 
         /** a soft lock that prevents redudant repaint updates during an ongoing one */
@@ -235,8 +233,8 @@ public class BitmapKernelUI {
 
             busy = true;
 
-            g.setFont(font);
-            g.setColor(Color.WHITE);
+            //g.setFont(font);
+            //g.setColor(Color.WHITE);
 
             final List<ProfileInfo> profileInfo = kernel.getProfileInfo();
             if (profileInfo != null) {
